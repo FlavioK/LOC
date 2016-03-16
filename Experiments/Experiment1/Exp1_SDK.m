@@ -113,6 +113,95 @@ vru.dataLS.SV          = DataLs(:,18);
 vru.dataLS.PDOP        = DataLs(:,20);
 vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
+
+vru.dataLS.CogScaled(1:length(vru.dataLS.COG)) = nan;
+for i=1:length(vru.dataLS.COG)
+    vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
+    if(vru.dataLS.CogScaled(i) > 360/2)
+        vru.dataLS.CogScaled(i) = vru.dataLS.CogScaled(i) - 360;
+    else
+        if(vru.dataLS.CogScaled(i) < -360/2)
+            vru.dataLS.CogScaled(i) = vru.dataLS.CogScaled(i) + 360;
+        else
+            vru.dataLS.CogScaled(i) = vru.dataLS.CogScaled(i);
+        end
+    end
+end   
+
+
+
+% Acceleration
+     figure('Name', 'iuVRU Accelerometers');
+     a(1) = subplot(4, 1, 1);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.accx, 'r');
+     title('Acceleration [m/s²]','fontsize',12);
+     ylabel('AccX [m/s²]');
+     grid;
+     hold off;
+
+     a(2) = subplot(4, 1, 2);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.accy, 'r')
+     ylabel('AccY [m/s²]');
+     grid;
+     hold off;
+
+     a(3) = subplot(4, 1, 3);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.accz, 'r')     
+     ylabel('AccZ [m/s²]');
+     grid;
+     hold off;
+     
+     a(4) = subplot(4, 1, 4);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.ImuTemp, 'b')
+     xlabel('Time [sec]');
+     ylabel('Temperature [°C]');
+     grid;
+     hold off;
+    
+     linkaxes([a(1) a(2) a(3) a(4)],'x');  % Base Y-limits on bottom subplot
+     clear a;
+    
+     if(SaveFigures == 1)
+        saveas(gcf,'Acc');
+     end
+     
+     % Rates
+     figure('Name', 'iuVRU Gyros');
+     a(1) = subplot(3, 1, 1);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.omgx, 'r');
+     title('Turn Rates [deg/sec]','fontsize',12);
+     ylabel('OmgX [deg/sec]');
+     grid;
+     hold off;
+
+     a(2) = subplot(3, 1, 2);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.omgy, 'r')
+     ylabel('OmgY [deg/sec]');
+     grid;
+     hold off;
+
+     a(3) = subplot(3, 1, 3);
+     hold on;    
+     plot(vru.dataHS.time,vru.dataHS.omgz, 'r')
+     xlabel('Time [sec]');
+     ylabel('OmgZ [deg/sec]');
+     grid;
+     hold off;
+    
+     linkaxes([a(1) a(2) a(3)],'x');  % Base Y-limits on bottom subplot
+     clear a;
+    
+     if(SaveFigures == 1)
+        saveas(gcf,'Omg');
+     end
+
+     
 accbix_bias = mean(vru.dataHS.accx)
 accbiy_bias = mean(vru.dataHS.accy)
 accbiz_bias = mean(vru.dataHS.accz) + 9.81

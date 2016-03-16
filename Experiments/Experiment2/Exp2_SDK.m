@@ -162,7 +162,9 @@ end
     
      linkaxes([a(1) a(2) a(3)],'x');  % Base Y-limits on bottom subplot
      clear a;
-    
+     if(SaveFigures == 1)
+        saveas(gcf,'Rpy');
+     end    
   
 %Compute roll angle:
 
