@@ -14,11 +14,11 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'forwardbackward/20160316_204823_uVRU_NAV_HS.log';
-FileNameLs           = 'forwardbackward/20160316_204823_uVRU_NAV_LS.log';
+FileNameHs           = 'circle/20160316_204950_uVRU_NAV_HS.log';
+FileNameLs           = 'circle/20160316_204950_uVRU_NAV_LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 1;
+figureFlag           = 0;
 SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
@@ -123,16 +123,49 @@ p_bias = mean(vru.dataHS.omgx(3000:5000))
 q_bias = mean(vru.dataHS.omgy(3000:5000))
 r_bias = mean(vru.dataHS.omgz(3000:5000))
 
+yaw_uIMU = vru.dataHS.rpyz ;
 %compute yaw
-T = vru.dataHS.time(2)-vru.dataHS.time(1)
-yaw_delta = (vru.dataHS.omgz-r_bias);
-time = vru.dataHS.time;
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+w_z = (vru.dataHS.omgz-r_bias)*D2R;
 
-%yaw[k] = yaw[k-1]+yaw_delta
+%psi[k+1] = psi[k]+dt*w_z[k+1]
+yaw = 1 : length(vru.dataHS.time);
+yaw(1) = yaw_uIMU(1);
+%Forward Rule
+for i=1:length(yaw)-1
+    yaw(i+1) = yaw(i)+dt*w_z(i+1);
+    if(yaw(i+1)>=pi)
+        yaw(i+1) = yaw(i+1) - (2 * pi);
+    end
+    if(yaw(i+1)<=(-pi))
+      yaw(i+1) = yaw(i+1) + (2 * pi);
+    end
+end
+figure(1)
+ subplot(2, 1, 1);
+ plot(yaw)
+ subplot(2, 1, 2);
+ plot(yaw_uIMU)
+ 
+%Trapez Rule
+yaw(1) = yaw_uIMU(1);
 
-yaw = zeros(length(vru.dataHS.omgz));
+for i=1:length(yaw)-1
+    yaw(i+1) = yaw(i)+dt*(w_z(i)+w_z(i+1))/2;
+    if(yaw(i+1)>=pi)
+        yaw(i+1) = yaw(i+1) - (2 * pi);
+    end
+    if(yaw(i+1)<=(-pi))
+      yaw(i+1) = yaw(i+1) + (2 * pi);
+    end
+end
 
-vru.dataLS.CogScaled(1:length(vru.dataLS.COG)) = nan;
+figure(2)
+ subplot(2, 1, 1);
+ plot(yaw)
+ subplot(2, 1, 2);
+ plot(yaw_uIMU)
+
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
     if(vru.dataLS.CogScaled(i) > 360/2)
