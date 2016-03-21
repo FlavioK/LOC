@@ -14,12 +14,12 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'C:\Users\Besitzer\Desktop\20140411_110713_uVRU_NAV_HS.log';
-FileNameLs           = 'C:\Users\Besitzer\Desktop\20140411_110713_uVRU_NAV_LS.log';
+FileNameHs           = 'data/20160316_205424_uVRU_NAV_HS.log';
+FileNameLs           = 'data/20160316_205424_uVRU_NAV_LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 1;
-SaveFigures          = 1;
+figureFlag           = 0;
+SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
 ext                  = '.fig';
@@ -114,7 +114,217 @@ vru.dataLS.PDOP        = DataLs(:,20);
 vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 
-vru.dataLS.CogScaled(1:length(vru.dataLS.COG)) = nan;
+%Compute bias during calib time (first 30s)     
+accbix_bias = mean(vru.dataHS.accx(3000:5000))
+accbiy_bias = mean(vru.dataHS.accy(3000:5000))
+accbiz_bias = mean(vru.dataHS.accz(3000:5000)) + 9.81
+
+p_bias = mean(vru.dataHS.omgx(3000:5000))
+q_bias = mean(vru.dataHS.omgy(3000:5000))
+r_bias = mean(vru.dataHS.omgz(3000:5000))
+
+roll_uIMU = vru.dataHS.rpyx ;
+pitch_uIMU = vru.dataHS.rpyy ;
+yaw_uIMU = vru.dataHS.rpyz ;
+
+%Get angels_delta
+angles_d = [vru.dataHS.omgx-p_bias vru.dataHS.omgy-q_bias vru.dataHS.omgz-r_bias]*D2R;
+angles = zeros(length(angles_d),3);
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+%Put init start angle
+angles(1,1) = roll_uIMU(1);
+angles(1,2) = pitch_uIMU(1);
+angles(1,3) = yaw_uIMU(1);
+%Compute all angles with forward integration
+%Forward Rule
+for i=1:length(angles)-1
+    angles(i+1,:) = angles(i,:) + dt*angles_d(i+1,:);
+    if(angles(i+1,1)>=pi)
+        angles(i+1,1) = angles(i+1,1) - (2 * pi);
+    end
+    if(angles(i+1,1)<=(-pi))
+      angles(i+1,1) = angles(i+1,1) + (2 * pi);
+    end
+    
+    if(angles(i+1,2)>=pi)
+        angles(i+1,2) = angles(i+1,2) - (2 * pi);
+    end
+    if(angles(i+1,2)<=(-pi))
+      angles(i+1,2) = angles(i+1,2) + (2 * pi);
+    end
+    
+    if(angles(i+1,3)>=pi)
+        angles(i+1,3) = angles(i+1,3) - (2 * pi);
+    end
+    if(angles(i+1,3)<=(-pi))
+      angles(i+1,3) = angles(i+1,3) + (2 * pi);
+    end
+end
+
+%Compute quarternion vector
+a = 1:length(angles);
+b = 1:length(angles);
+c = 1:length(angles);
+d = 1:length(angles);
+
+for i=1:length(angles)
+ a(i) = cos(angles(i,1)/2)*cos(angles(i,2)/2)*cos(angles(i,3)/2) + sin(angles(i,1)/2)*sin(angles(i,2)/2)*sin(angles(i,3)/2);
+ b(i) = sin(angles(i,1)/2)*cos(angles(i,2)/2)*cos(angles(i,3)/2) - cos(angles(i,1)/2)*sin(angles(i,2)/2)*sin(angles(i,3)/2);
+ c(i) = cos(angles(i,1)/2)*sin(angles(i,2)/2)*cos(angles(i,3)/2) + sin(angles(i,1)/2)*cos(angles(i,2)/2)*sin(angles(i,3)/2);
+ d(i) = cos(angles(i,1)/2)*cos(angles(i,2)/2)*sin(angles(i,3)/2) - sin(angles(i,1)/2)*sin(angles(i,2)/2)*cos(angles(i,3)/2)
+ end
+
+ %not working yet
+ %q_delta = 1/2 * [-b -c -d;a -d c;-c b a]*angels_d;
+ 
+figure(6)
+plot(angles(:,1),'b')
+hold on;
+plot(angles(:,2),'r')
+plot(angles(:,3),'m')
+
+
+
+%compute yaw
+yaw_uIMU = vru.dataHS.rpyz ;
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+w_z = (vru.dataHS.omgz-r_bias)*D2R;
+yaw = 1 : length(vru.dataHS.time);
+yaw(1) = yaw_uIMU(1);
+%Forward Rule
+for i=1:length(yaw)-1
+    yaw(i+1) = yaw(i)+dt*w_z(i+1);
+    if(yaw(i+1)>=pi)
+        yaw(i+1) = yaw(i+1) - (2 * pi);
+    end
+    if(yaw(i+1)<=(-pi))
+      yaw(i+1) = yaw(i+1) + (2 * pi);
+    end
+end
+
+ 
+%Trapez Rule
+yaw_t = 1 : length(vru.dataHS.time);
+yaw_t(1) = yaw_uIMU(1);
+for i=1:length(yaw_t)-1
+    yaw_t(i+1) = yaw_t(i)+dt*(w_z(i)+w_z(i+1))/2;
+    if(yaw_t(i+1)>=pi)
+        yaw_t(i+1) = yaw_t(i+1) - (2 * pi);
+    end
+    if(yaw_t(i+1)<=(-pi))
+      yaw_t(i+1) = yaw_t(i+1) + (2 * pi);
+    end
+end
+
+%compute roll
+roll_uIMU = vru.dataHS.rpyx ;
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+w_x = (vru.dataHS.omgx-p_bias)*D2R;
+roll = 1 : length(vru.dataHS.time);
+roll(1) = roll_uIMU(1);
+%Forward Rule
+for i=1:length(roll)-1
+    roll(i+1) = roll(i)+dt*w_x(i+1);
+    if(roll(i+1)>=pi)
+        roll(i+1) = roll(i+1) - (2 * pi);
+    end
+    if(roll(i+1)<=(-pi))
+      roll(i+1) = roll(i+1) + (2 * pi);
+    end
+end
+
+%compute pitch
+pitch_uIMU = vru.dataHS.rpyy ;
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+w_y = (vru.dataHS.omgy-q_bias)*D2R;
+pitch = 1 : length(vru.dataHS.time);
+pitch(1) = pitch_uIMU(1);
+%Forward Rule
+for i=1:length(pitch)-1
+    pitch(i+1) = pitch(i)+dt*w_y(i+1);
+    if(pitch(i+1)>=pi)
+        pitch(i+1) = pitch(i+1) - (2 * pi);
+    end
+    if(pitch(i+1)<=(-pi))
+      pitch(i+1) = pitch(i+1) + (2 * pi);
+    end
+end
+
+%Yaw
+figure(1)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,yaw*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,yaw_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ 
+%Yaw
+figure(2)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,yaw_t*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,yaw_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ 
+ %Roll
+figure(3)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,roll*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,roll_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ 
+ %Pitch
+figure(4)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,pitch*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,pitch_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ %xlim([40 65])
+
+ 
+ %plot all angle
+ figure(5)
+  plot(vru.dataHS.time,yaw_uIMU*R2D,'b')
+  hold on
+  plot(vru.dataHS.time,yaw_t*R2D,'r')
+  plot(vru.dataHS.time,yaw*R2D,'m')
+  title('All Angles');
+  xlabel('Time[s]');
+  ylabel('Angle [\circ]');
+  legend('Yaw_uIME','Yaw_trapez','Yaw_forward')
+  %xlim([40 65])
+hold off
+  
+  
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
     if(vru.dataLS.CogScaled(i) > 360/2)
@@ -147,22 +357,22 @@ if(figureFlag == 1)
      a(1) = subplot(4, 1, 1);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accx, 'r');
-     title('Acceleration [m/s²]','fontsize',12);
-     ylabel('AccX [m/s²]');
+     title('Acceleration [m/sï¿½]','fontsize',12);
+     ylabel('AccX [m/sï¿½]');
      grid;
      hold off;
 
      a(2) = subplot(4, 1, 2);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accy, 'r')
-     ylabel('AccY [m/s²]');
+     ylabel('AccY [m/sï¿½]');
      grid;
      hold off;
 
      a(3) = subplot(4, 1, 3);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accz, 'r')     
-     ylabel('AccZ [m/s²]');
+     ylabel('AccZ [m/sï¿½]');
      grid;
      hold off;
      
@@ -170,7 +380,7 @@ if(figureFlag == 1)
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.ImuTemp, 'b')
      xlabel('Time [sec]');
-     ylabel('Temperature [°C]');
+     ylabel('Temperature [ï¿½C]');
      grid;
      hold off;
     

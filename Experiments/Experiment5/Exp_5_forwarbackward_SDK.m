@@ -18,7 +18,7 @@ FileNameHs           = 'forwardbackward/20160316_204823_uVRU_NAV_HS.log';
 FileNameLs           = 'forwardbackward/20160316_204823_uVRU_NAV_LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 1;
+figureFlag           = 0;
 SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
@@ -123,14 +123,80 @@ p_bias = mean(vru.dataHS.omgx(3000:5000))
 q_bias = mean(vru.dataHS.omgy(3000:5000))
 r_bias = mean(vru.dataHS.omgz(3000:5000))
 
+yaw_uIMU = vru.dataHS.rpyz ;
 %compute yaw
-T = vru.dataHS.time(2)-vru.dataHS.time(1)
-yaw_delta = (vru.dataHS.omgz-r_bias);
-time = vru.dataHS.time;
+dt = vru.dataHS.time(2)-vru.dataHS.time(1)
+w_z = (vru.dataHS.omgz-r_bias)*D2R;
 
-%yaw[k] = yaw[k-1]+yaw_delta
 
-yaw = zeros(length(vru.dataHS.omgz));
+yaw = 1 : length(vru.dataHS.time);
+yaw(1) = yaw_uIMU(1);
+%Forward Rule
+for i=1:length(yaw)-1
+    yaw(i+1) = yaw(i)+dt*w_z(i+1);
+    if(yaw(i+1)>=pi)
+        yaw(i+1) = yaw(i+1) - (2 * pi);
+    end
+    if(yaw(i+1)<=(-pi))
+      yaw(i+1) = yaw(i+1) + (2 * pi);
+    end
+end
+figure(1)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,yaw*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,yaw_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+ 
+yaw_t = 1 : length(vru.dataHS.time);
+%Trapez Rule
+yaw_t(1) = yaw_uIMU(1);
+
+for i=1:length(yaw_t)-1
+    yaw_t(i+1) = yaw_t(i)+dt*(w_z(i)+w_z(i+1))/2;
+    if(yaw_t(i+1)>=pi)
+        yaw_t(i+1) = yaw_t(i+1) - (2 * pi);
+    end
+    if(yaw_t(i+1)<=(-pi))
+      yaw_t(i+1) = yaw_t(i+1) + (2 * pi);
+    end
+end
+
+figure(2)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,yaw_t*R2D)
+ title('Computed \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,yaw_uIMU*R2D)
+ title('uIMU \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+ 
+ %plot all angle
+ figure(3)
+  plot(vru.dataHS.time,yaw_uIMU*R2D,'b')
+  hold on
+  plot(vru.dataHS.time,yaw_t*R2D,'r')
+  plot(vru.dataHS.time,yaw*R2D,'m')
+  title('All Angles');
+  xlabel('Time[s]');
+  ylabel('Angle [\circ]');
+  legend('Yaw_uIME','Yaw_trapez','Yaw_forward')
+  xlim([30 47])
+hold off
+  
+  
 
 vru.dataLS.CogScaled(1:length(vru.dataLS.COG)) = nan;
 for i=1:length(vru.dataLS.COG)

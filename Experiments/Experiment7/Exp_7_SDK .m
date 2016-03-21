@@ -14,11 +14,11 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'circle/20160316_204950_uVRU_NAV_HS.log';
-FileNameLs           = 'circle/20160316_204950_uVRU_NAV_LS.log';
+FileNameHs           = 'data/20160320_233107_uVRU_NAV_HS.log';
+FileNameLs           = 'data/20160320_233107_uVRU_NAV_LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 0;
+figureFlag           = 1;
 SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
@@ -115,88 +115,146 @@ vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 
 %Compute bias during calib time (first 30s)     
-accbix_bias = mean(vru.dataHS.accx(3000:5000))
-accbiy_bias = mean(vru.dataHS.accy(3000:5000))
-accbiz_bias = mean(vru.dataHS.accz(3000:5000)) + 9.81
+accbix_bias = mean(vru.dataHS.accx(1:2000))
+accbiy_bias = mean(vru.dataHS.accy(1:2000))
+accbiz_bias = mean(vru.dataHS.accz(1:2000)) + 9.81
 
-p_bias = mean(vru.dataHS.omgx(3000:5000))
-q_bias = mean(vru.dataHS.omgy(3000:5000))
-r_bias = mean(vru.dataHS.omgz(3000:5000))
+p_bias = mean(vru.dataHS.omgx(1:2000))
+q_bias = mean(vru.dataHS.omgy(1:2000))
+r_bias = mean(vru.dataHS.omgz(1:2000))
 
-yaw_uIMU = vru.dataHS.rpyz ;
-%compute yaw
+vn_uIMU = vru.dataHS.vn ;
+ve_uIMU = vru.dataHS.ve ;
+vd_uIMU = vru.dataHS.vd ;
+
+%Get angels_delta
+acceleration = [vru.dataHS.accx-accbix_bias vru.dataHS.accy-accbiy_bias vru.dataHS.accz-accbiy_bias];
+v_calc = zeros(length(acceleration),3);
 dt = vru.dataHS.time(2)-vru.dataHS.time(1)
-w_z = (vru.dataHS.omgz-r_bias)*D2R;
+%Put init start velocity
+v_calc(1,1) = vn_uIMU(1);
+v_calc(1,2) = ve_uIMU(1);
+v_calc(1,3) = vd_uIMU(1);
+%Compute all velocities with forward integration
 
-
-yaw = 1 : length(vru.dataHS.time);
-yaw(1) = yaw_uIMU(1);
-%Forward Rule
-for i=1:length(yaw)-1
-    yaw(i+1) = yaw(i)+dt*w_z(i+1);
-    if(yaw(i+1)>=pi)
-        yaw(i+1) = yaw(i+1) - (2 * pi);
-    end
-    if(yaw(i+1)<=(-pi))
-      yaw(i+1) = yaw(i+1) + (2 * pi);
-    end
+for i=1:length(v_calc)-1
+    v_calc(i+1,:) = v_calc(i,:) + dt*acceleration(i+1,:);
 end
+
+%Get uIMU pos data
+lon_uIMU = vru.dataHS.lon;
+lat_uIMU = vru.dataHS.lat;
+alt_uIMU = vru.dataHS.alt;
+
+%Compute all positions with forward integration
+%Forward Rule
+%Forward Rule
+pos_calc = zeros(length(v_calc),3);
+%Put init start velocity
+pos_calc(1,1) = lon_uIMU(1);
+pos_calc(1,2) = lat_uIMU(1);
+pos_calc(1,3) = alt_uIMU(1);
+for i=1:length(pos_calc)-1
+    pos_calc(i+1,:) = pos_calc(i,:) + dt*v_calc(i+1,:);
+end
+
+
+%Vn
 figure(1)
  subplot(2, 1, 1);
- plot(vru.dataHS.time,yaw*R2D)
- title('Computed \psi');
+ plot(vru.dataHS.time,v_calc(:,1))
+ title('Computed vn');
  xlabel('Time[s]');
- ylabel('Angle [\circ]');
- xlim([30 47])
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
  subplot(2, 1, 2);
- plot(vru.dataHS.time,yaw_uIMU*R2D)
- title('uIMU \psi');
+ plot(vru.dataHS.time,vn_uIMU)
+ title('uIMU vn');
  xlabel('Time[s]');
- ylabel('Angle [\circ]');
- xlim([30 47])
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
  
-yaw_t = 1 : length(vru.dataHS.time);
-%Trapez Rule
-yaw_t(1) = yaw_uIMU(1);
-
-for i=1:length(yaw_t)-1
-    yaw_t(i+1) = yaw_t(i)+dt*(w_z(i)+w_z(i+1))/2;
-    if(yaw_t(i+1)>=pi)
-        yaw_t(i+1) = yaw_t(i+1) - (2 * pi);
-    end
-    if(yaw_t(i+1)<=(-pi))
-      yaw_t(i+1) = yaw_t(i+1) + (2 * pi);
-    end
-end
-
+ %Ve
 figure(2)
  subplot(2, 1, 1);
- plot(vru.dataHS.time,yaw_t*R2D)
- title('Computed \psi');
+ plot(vru.dataHS.time,v_calc(:,2))
+ title('Computed ve');
  xlabel('Time[s]');
- ylabel('Angle [\circ]');
- xlim([30 47])
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
  subplot(2, 1, 2);
- plot(vru.dataHS.time,yaw_uIMU*R2D)
- title('uIMU \psi');
+ plot(vru.dataHS.time,ve_uIMU)
+ title('uIMU ve');
  xlabel('Time[s]');
- ylabel('Angle [\circ]');
- xlim([30 47])
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
+
+ %Vd
+figure(3)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,v_calc(:,3))
+ title('Computed vd');
+ xlabel('Time[s]');
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,vd_uIMU)
+ title('uIMU vn');
+ xlabel('Time[s]');
+ ylabel('Velocity [m/s]');
+ %xlim([40 65])
+
+ %pos lon
+figure(4)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,pos_calc(:,1))
+ title('Computed lon');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,lon_uIMU)
+ title('uIMU lon');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
+
+ %pos lat
+figure(5)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,pos_calc(:,2))
+ title('Computed lat');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,lat_uIMU)
+ title('uIMU lat');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
  
- %plot all angle
- figure(3)
-  plot(vru.dataHS.time,yaw_uIMU*R2D,'b')
-  hold on
-  plot(vru.dataHS.time,yaw_t*R2D,'r')
-  plot(vru.dataHS.time,yaw*R2D,'m')
-  title('All Angles');
-  xlabel('Time[s]');
-  ylabel('Angle [\circ]');
-  legend('Yaw_uIME','Yaw_trapez','Yaw_forward')
-  xlim([30 47])
-hold off
-  
-  
+  %pos alt
+figure(6)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,pos_calc(:,3))
+ title('Computed alt');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,alt_uIMU)
+ title('uIMU alt');
+ xlabel('Time[s]');
+ ylabel('Position [m]');
+ %xlim([40 65])
+
+ figure(7)
+ plot(pos_calc(:,1),pos_calc(:,2))
+  title('Calc Position');
+ xlabel('lat [m]');
+ ylabel('lon [m]');
+ 
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
     if(vru.dataLS.CogScaled(i) > 360/2)
