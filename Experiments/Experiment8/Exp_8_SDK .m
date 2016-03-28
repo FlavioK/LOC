@@ -199,6 +199,7 @@ figure(1)
  xlabel('Time[s]');
  ylabel('Velocity [m/s]');
  %xlim([40 65])
+   saveas(gcf,'Exp_8_velocity');
  
  %Position
 figure(2)
@@ -214,6 +215,7 @@ figure(2)
  xlabel('Time[s]');
  ylabel('Position [m]');
  %xlim([40 65])
+    saveas(gcf,'Exp_8_position');
 
  %Position
 figure(3)
@@ -222,6 +224,7 @@ figure(3)
  xlabel('X - Pos[m]');
  ylabel('Y - Pos [m]');
  %xlim([40 65])
+    saveas(gcf,'Exp_8_position_xy');
  
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
