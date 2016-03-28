@@ -166,18 +166,9 @@ for i=1:length(angles)-1
     end
 end
 
-
-
- %not working yet
- %q_delta = 1/2 * [-b -c -d;a -d c;-c b a]*angels_d;
- 
-figure(6)
-plot(angles(:,1),'b')
-hold on;
-plot(angles(:,2),'r')
-plot(angles(:,3),'m')
-
-
+roll_error = angles(1,1)*R2D - angles(end,1)*R2D
+pitch_error = angles(1,2)*R2D - angles(end,2)*R2D
+yaw_error = angles(1,3)*R2D - angles(end,3)*R2D
 
 
 %Yaw
@@ -229,7 +220,7 @@ figure(3)
  %xlim([40 65])
    saveas(gcf,'Exp_6_1_Pitch');
 
- adsf
+ 
   
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);

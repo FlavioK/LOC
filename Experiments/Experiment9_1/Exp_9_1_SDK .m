@@ -115,13 +115,13 @@ vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 
 %Compute bias during calib time (first 30s)     
-accbix_bias = mean(vru.dataHS.accx(3000:5000))
-accbiy_bias = mean(vru.dataHS.accy(3000:5000))
-accbiz_bias = mean(vru.dataHS.accz(3000:5000)) + 9.81
+accbix_bias = mean(vru.dataHS.accx(1000:5000))
+accbiy_bias = mean(vru.dataHS.accy(1000:5000))
+accbiz_bias = mean(vru.dataHS.accz(1000:5000)) + 9.81
 
-p_bias = mean(vru.dataHS.omgx(3000:5000))
-q_bias = mean(vru.dataHS.omgy(3000:5000))
-r_bias = mean(vru.dataHS.omgz(3000:5000))
+p_bias = mean(vru.dataHS.omgx(1000:5000))
+q_bias = mean(vru.dataHS.omgy(1000:5000))
+r_bias = mean(vru.dataHS.omgz(1000:5000))
 
 roll_uIMU = vru.dataHS.rpyx;
 pitch_uIMU = vru.dataHS.rpyy;

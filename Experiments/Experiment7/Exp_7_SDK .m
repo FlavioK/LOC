@@ -15,7 +15,7 @@ clear all; close all; fclose all; clc;
 %
 %% Settings
 
-file = 3
+file = 2
 switch file
 case {1}
 FileNameHs           = 'data/horizontalx/HS.log';
@@ -128,13 +128,13 @@ vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 
 %Compute bias during calib time (first 30s)     
-accbix_bias = mean(vru.dataHS.accx(1:2000))
-accbiy_bias = mean(vru.dataHS.accy(1:2000))
-accbiz_bias = mean(vru.dataHS.accz(1:2000)) + 9.81
+accbix_bias = mean(vru.dataHS.accx(1:4000))
+accbiy_bias = mean(vru.dataHS.accy(1:4000))
+accbiz_bias = mean(vru.dataHS.accz(1:4000)) + 9.81
 
-p_bias = mean(vru.dataHS.omgx(1:2000))
-q_bias = mean(vru.dataHS.omgy(1:2000))
-r_bias = mean(vru.dataHS.omgz(1:2000))
+p_bias = mean(vru.dataHS.omgx(1:4000))
+q_bias = mean(vru.dataHS.omgy(1:4000))
+r_bias = mean(vru.dataHS.omgz(1:4000))
 
 vn_uIMU = vru.dataHS.vn -vru.dataHS.vn(1);
 ve_uIMU = vru.dataHS.ve -vru.dataHS.ve(1);
@@ -188,7 +188,7 @@ figure(1)
  xlabel('Time[s]');
  ylabel('Velocity [m/s]');
  %xlim([40 65])
- 
+ saveas(gcf,'Exp_7_velocity_xy');
  %Position
 figure(2)
  subplot(2, 1, 1);
@@ -203,7 +203,7 @@ figure(2)
  xlabel('Time[s]');
  ylabel('Position [m]');
  %xlim([40 65])
-
+ saveas(gcf,'Exp_7_pos_xy');
  %Position
 figure(3)
  plot(pos_x,pos_y)
@@ -211,6 +211,7 @@ figure(3)
  xlabel('X - Pos[m]');
  ylabel('Y - Pos [m]');
  %xlim([40 65])
+  saveas(gcf,'Exp_7_pos_xyplot');
  
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);

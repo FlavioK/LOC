@@ -205,6 +205,30 @@ figure(2)
 hold off
   saveas(gcf,'Yaw_all');
  
+ 
+ diff = yaw_uIMU(:)*R2D-yaw_t(:)*R2D;
+ figure(4)
+ subplot(2, 1, 1);
+ plot(vru.dataHS.time,yaw_t*R2D,'r')
+ hold on;
+ plot(vru.dataHS.time,yaw_uIMU*R2D,'b');
+ title('\psi');
+ legend('computed trapeze','uIMU');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+ 
+ 
+ 
+ subplot(2, 1, 2);
+ plot(vru.dataHS.time,diff)
+ title('Difference \psi');
+ xlabel('Time[s]');
+ ylabel('Angle [\circ]');
+ xlim([30 47])
+  saveas(gcf,'Exp_5_Yaw_difference');
+  asdf
+  
   
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
@@ -238,22 +262,22 @@ if(figureFlag == 1)
      a(1) = subplot(4, 1, 1);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accx, 'r');
-     title('Acceleration [m/s�]','fontsize',12);
-     ylabel('AccX [m/s�]');
+     title('Acceleration [m/s²]','fontsize',12);
+     ylabel('AccX [m/s²]');
      grid;
      hold off;
 
      a(2) = subplot(4, 1, 2);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accy, 'r')
-     ylabel('AccY [m/s�]');
+     ylabel('AccY [m/s²]');
      grid;
      hold off;
 
      a(3) = subplot(4, 1, 3);
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.accz, 'r')     
-     ylabel('AccZ [m/s�]');
+     ylabel('AccZ [m/s²]');
      grid;
      hold off;
      
@@ -261,7 +285,7 @@ if(figureFlag == 1)
      hold on;    
      plot(vru.dataHS.time,vru.dataHS.ImuTemp, 'b')
      xlabel('Time [sec]');
-     ylabel('Temperature [�C]');
+     ylabel('Temperature [C]');
      grid;
      hold off;
     

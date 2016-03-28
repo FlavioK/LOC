@@ -23,7 +23,7 @@ FileNameLs           = 'data/HS.log';
 
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 1;
+figureFlag           = 0;
 SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
@@ -151,7 +151,7 @@ for i=1:length(yaw)-1
       yaw(i+1) = yaw(i+1) + (2 * pi);
     end
 end
-yaw = yaw*D2R;
+%yaw = yaw*D2R;
 %Get acceleration
 accel_x = vru.dataHS.accx-accbix_bias;
 accel_y = (vru.dataHS.accy-accbiy_bias)*(-1);
