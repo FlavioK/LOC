@@ -141,6 +141,8 @@ for i=1:length(yaw)-1
       yaw(i+1) = yaw(i+1) + (2 * pi);
     end
 end
+
+
 figure(1)
  subplot(2, 1, 1);
  plot(vru.dataHS.time,yaw*R2D)
@@ -154,10 +156,11 @@ figure(1)
  xlabel('Time[s]');
  ylabel('Angle [\circ]');
  xlim([30 47])
- 
+ saveas(gcf,'Yaw_forward');
 yaw_t = 1 : length(vru.dataHS.time);
 %Trapez Rule
 yaw_t(1) = yaw_uIMU(1);
+
 
 for i=1:length(yaw_t)-1
     yaw_t(i+1) = yaw_t(i)+dt*(w_z(i)+w_z(i+1))/2;
@@ -168,6 +171,10 @@ for i=1:length(yaw_t)-1
       yaw_t(i+1) = yaw_t(i+1) + (2 * pi);
     end
 end
+
+final_error_trapeze = (yaw_t(1)-yaw_t(10139))*R2D
+final_error_forward = (yaw(1)-yaw(10139))*R2D
+final_error_uIMU = (yaw_uIMU(1)-yaw_uIMU(10139))*R2D
 
 figure(2)
  subplot(2, 1, 1);
@@ -182,7 +189,8 @@ figure(2)
  xlabel('Time[s]');
  ylabel('Angle [\circ]');
  xlim([30 47])
- 
+  saveas(gcf,'Yaw_trapeze');
+
  %plot all angle
  figure(3)
   plot(vru.dataHS.time,yaw_uIMU*R2D,'b')
@@ -195,7 +203,8 @@ figure(2)
   legend('Yaw_uIME','Yaw_trapez','Yaw_forward')
   xlim([30 47])
 hold off
-  
+  saveas(gcf,'Yaw_all');
+ 
   
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
