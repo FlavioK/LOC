@@ -165,8 +165,8 @@ v_y(1) = 0;
 %Compute all velocities with forward integration
 dt = vru.dataHS.time(2)-vru.dataHS.time(1)
 for i=1:length(v_x)-1
-    v_x(i+1) = v_x(i) + dt *(cos(yaw(i+1))*accel_x(i+1)+sin(yaw(i+1))*accel_y(i+1));
-    v_y(i+1) = v_y(i) + dt *(-sin(yaw(i+1))*accel_y(i+1)+cos(yaw(i+1))*accel_y(i+1));
+    v_x(i+1) = v_x(i) + dt *(cos(yaw(i+1))*accel_x(i+1)-sin(yaw(i+1))*accel_y(i+1));
+    v_y(i+1) = v_y(i) + dt *(+sin(yaw(i+1))*accel_x(i+1)+cos(yaw(i+1))*accel_y(i+1));
 end
 
 %Compute all positions with forward integration
