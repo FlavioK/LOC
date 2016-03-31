@@ -140,7 +140,19 @@ w_z = (vru.dataHS.omgz-r_bias)*D2R;
 
 
 yaw = 1 : length(vru.dataHS.time);
+accel_x = vru.dataHS.accx-accbix_bias;
+accel_y = (vru.dataHS.accy-accbiy_bias);
+v_x = zeros(1,length(accel_x));
+v_y = zeros(1,length(accel_y));
+pos_x = zeros(1,length(v_x));
+pos_y = zeros(1,length(v_y));
+
 yaw(1) = 0;
+v_x(1) = 0;
+v_y(1) = 0;
+pos_x(1) = 0;
+pos_y(1) = 0;
+
 %Forward Rule
 for i=1:length(yaw)-1
     yaw(i+1) = yaw(i)+dt*w_z(i+1);
@@ -150,38 +162,12 @@ for i=1:length(yaw)-1
     if(yaw(i+1)<=(-pi))
       yaw(i+1) = yaw(i+1) + (2 * pi);
     end
-end
-%yaw = yaw*D2R;
-%Get acceleration
-accel_x = vru.dataHS.accx-accbix_bias;
-accel_y = (vru.dataHS.accy-accbiy_bias)*(-1);
-
-v_x = zeros(1,length(accel_x));
-v_y = zeros(1,length(accel_y));
-
-%Put init start velocity
-v_x(1) = 0;
-v_y(1) = 0;
-%Compute all velocities with forward integration
-dt = vru.dataHS.time(2)-vru.dataHS.time(1)
-for i=1:length(v_x)-1
     v_x(i+1) = v_x(i) + dt *(cos(yaw(i+1))*accel_x(i+1)-sin(yaw(i+1))*accel_y(i+1));
-    v_y(i+1) = v_y(i) + dt *(+sin(yaw(i+1))*accel_x(i+1)+cos(yaw(i+1))*accel_y(i+1));
-end
-
-%Compute all positions with forward integration
-%Forward Rule
-pos_x = zeros(1,length(v_x));
-pos_y = zeros(1,length(v_y));
-%Put init start velocity
-pos_x(1) = 0;
-pos_y(1) = 0;
-
-for i=1:length(pos_x)-1
+    v_y(i+1) = v_y(i) + dt *(sin(yaw(i+1))*accel_x(i+1)+cos(yaw(i+1))*accel_y(i+1));
+    
     pos_x(i+1) = pos_x(i) + dt*v_x(i+1);
     pos_y(i+1) = pos_y(i) + dt*v_y(i+1);
 end
-
 
 
 

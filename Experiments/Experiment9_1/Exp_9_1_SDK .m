@@ -18,7 +18,7 @@ FileNameHs           = 'data2/HS.log';
 FileNameLs           = 'data2/LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
-figureFlag           = 1;
+figureFlag           = 0;
 SaveFigures          = 0;
 FigPath              = 'Fig';
 addtit               = '';
@@ -174,7 +174,7 @@ yaw = angles(:,3);
 %computening velocities:
 %Get acceleration
 accel_x = vru.dataHS.accx-accbix_bias;
-accel_y = (vru.dataHS.accy-accbiy_bias);
+accel_y = vru.dataHS.accy-accbiy_bias;
 accel_z = vru.dataHS.accz-accbiz_bias;
 accel = vertcat(accel_x', accel_y', accel_z');
 
@@ -195,7 +195,6 @@ dt = vru.dataHS.time(2)-vru.dataHS.time(1)
 for i=1:length(accel_x)-1
     Cb = EA2DCM(roll(i+1),pitch(i+1),yaw(i+1));
     v(:,i+1) = v(:,i) +  dt*(Cb*accel(:,i+1)+[0;0;9.81]);
-    
     %Calculate Position
     pos_e(i+1) = pos_e(i) + dt*v(1,i+1);
     pos_n(i+1) = pos_n(i) + dt*v(2,i+1);
