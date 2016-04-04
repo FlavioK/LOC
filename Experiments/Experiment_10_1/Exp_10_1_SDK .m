@@ -14,8 +14,8 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'data2/HS.log';
-FileNameLs           = 'data2/LS.log';
+FileNameHs           = 'data/HS.log';
+FileNameLs           = 'data/LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
 figureFlag           = 0;
@@ -270,7 +270,7 @@ figure()
  xlabel('Time[s]');
  ylabel('Velocity [m/s]');
  %xlim([40 65])
-   saveas(gcf,'Exp_9_1_velocity_xy');
+   %saveas(gcf,'Exp_9_1_velocity_xy');
  
  %Position x y
 figure()
@@ -292,7 +292,7 @@ figure()
  xlabel('Time[s]');
  ylabel('Position [m]');
  %xlim([40 65])
-   saveas(gcf,'Exp_9_1_position_xy');
+   %saveas(gcf,'Exp_9_1_position_xy');
 
  %Position x y
 figure()
@@ -301,7 +301,7 @@ figure()
  xlabel('X - Pos[m]');
  ylabel('Y - Pos [m]');
  %xlim([40 65])
-   saveas(gcf,'Exp_9_1_position xy_plot');
+   %saveas(gcf,'Exp_9_1_position xy_plot');
  
   %Velocity and position z
 figure()
@@ -317,11 +317,11 @@ figure()
  xlabel('Time[s]');
  ylabel('Velocity [m]');
  %xlim([40 65])
-   saveas(gcf,'Exp_9_1_velocity_and_pos_z');
+   %saveas(gcf,'Exp_9_1_velocity_and_pos_z');
 
  figure()
  plot3(pos_e,pos_n,pos_d);
-   saveas(gcf,'Exp_9_1_pos_3d');
+   %saveas(gcf,'Exp_9_1_pos_3d');
   
 
   
