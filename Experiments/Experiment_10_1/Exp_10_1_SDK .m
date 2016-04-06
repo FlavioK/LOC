@@ -113,7 +113,7 @@ vru.dataLS.SV          = DataLs(:,18);
 vru.dataLS.PDOP        = DataLs(:,20);
 vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
-
+%% Computeing
 %Compute bias during calib time (first 30s)     
 accbix_bias = mean(vru.dataHS.accx(1:7000))
 accbiy_bias = mean(vru.dataHS.accy(1:7000))
@@ -324,7 +324,7 @@ figure()
    %saveas(gcf,'Exp_9_1_pos_3d');
   
 
-  
+%%IMU plots 
 for i=1:length(vru.dataLS.COG)
     vru.dataLS.CogScaled(i) = mod(vru.dataLS.COG(i), 360);
     if(vru.dataLS.CogScaled(i) > 360/2)

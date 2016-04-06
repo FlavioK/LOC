@@ -125,7 +125,8 @@ r_bias = mean(vru.dataHS.omgz(1:7000))
 
 roll_uIMU = vru.dataHS.rpyx;
 pitch_uIMU = vru.dataHS.rpyy;
-yaw_uIMU = vru.dataHS.rpyz  ;
+yaw_uIMU = vru.dataHS.rpyz;
+
 
 %Get angels_delta
 w = [vru.dataHS.omgx-p_bias vru.dataHS.omgy-q_bias vru.dataHS.omgz-r_bias]*D2R;
@@ -190,16 +191,19 @@ v(3,1) = 0;
 pos_e(1) = 0;
 pos_n(1) = 0;
 pos_d(1) = 0;
+%Baormeter
+baro_calib = vru.dataHS.baroAlt-vru.dataHS.baroAlt(1);
+pos_d_k1 = 0
+pos_d_k2 = 1
 %Compute all velocities with forward integration
 dt = vru.dataHS.time(2)-vru.dataHS.time(1)
 for i=1:length(accel_x)-1
-    Cb = EA2DCM(roll(i+1),pitch(i+1),yaw(i+1));
-    v(:,i+1) = v(:,i) +  dt*(Cb*accel(:,i+1)+[0;0;9.81]);
+    Cb = EA2DCM(roll(i),pitch(i),yaw(i));
+    v(:,i+1) = v(:,i) +  dt*(Cb*accel(:,i)+[0;0;9.81]);
     %Calculate Position
-    pos_n(i+1) = pos_n(i) + dt*v(1,i+1);
-    pos_e(i+1) = pos_e(i) + dt*v(2,i+1);
-    pos_d(i+1) = pos_d(i) + dt*v(3,i+1);
-
+    pos_n(i+1) = pos_n(i) + dt*v(1,i);
+    pos_e(i+1) = pos_e(i) + dt*v(2,i);
+    pos_d(i+1) = pos_d(i) + dt*v(3,i);
 end
 
 
@@ -226,7 +230,6 @@ figure()
  xlabel('Time[s]');
  ylabel('Angle [\circ]');
  %xlim([40 65])
- %Velocity x y
  %Yaw
 figure()
  plot(vru.dataHS.time,angles(:,3)*R2D)
@@ -272,7 +275,7 @@ figure()
  %xlim([40 65])
    saveas(gcf,'Exp_9_1_velocity_xy');
  
- %Position x y
+
 figure()
  subplot(3, 1, 1);
  plot(vru.dataHS.time,pos_e)
@@ -303,21 +306,7 @@ figure()
  %xlim([40 65])
    saveas(gcf,'Exp_9_1_position xy_plot');
  
-  %Velocity and position z
-figure()
- subplot(2, 1, 1);
- plot(vru.dataHS.time,v(3,:))
- title('Computed vZ');
- xlabel('Time[s]');
- ylabel('Velocity [m/s]');
- %xlim([40 65])
- subplot(2, 1, 2);
- plot(vru.dataHS.time,pos_d)
- title('Computed posz');
- xlabel('Time[s]');
- ylabel('Velocity [m]');
- %xlim([40 65])
-   saveas(gcf,'Exp_9_1_velocity_and_pos_z');
+
 
  figure()
  plot3(pos_e,pos_n,pos_d);
