@@ -14,8 +14,8 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'data2/HS.log';
-FileNameLs           = 'data2/LS.log';
+FileNameHs           = 'data/10_4_2016/HS.log';
+FileNameLs           = 'data/10_4_2016/LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
 figureFlag           = 0;
@@ -115,13 +115,13 @@ vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 
 %Compute bias during calib time (first 30s)     
-accbix_bias = mean(vru.dataHS.accx(1:7000))
-accbiy_bias = mean(vru.dataHS.accy(1:7000))
-accbiz_bias = mean(vru.dataHS.accz(1:7000)) + 9.81
+accbix_bias = mean(vru.dataHS.accx(1:3000))
+accbiy_bias = mean(vru.dataHS.accy(1:3000))
+accbiz_bias = mean(vru.dataHS.accz(1:3000)) + 9.81
 
-p_bias = mean(vru.dataHS.omgx(1:7000))
-q_bias = mean(vru.dataHS.omgy(1:7000))
-r_bias = mean(vru.dataHS.omgz(1:7000))
+p_bias = mean(vru.dataHS.omgx(1:3000))
+q_bias = mean(vru.dataHS.omgy(1:3000))
+r_bias = mean(vru.dataHS.omgz(1:3000))
 
 roll_uIMU = vru.dataHS.rpyx;
 pitch_uIMU = vru.dataHS.rpyy;
@@ -144,7 +144,7 @@ for i=1:length(angles)-1
                       [1 sin(angles(i,1))*sin(angles(i,2))/cos(angles(i,2)) cos(angles(i,1))*sin(angles(i,2))/cos(angles(i,2));...
                      0 cos(angles(i,1)) -sin(angles(i,1));...
                      0 sin(angles(i,1))/cos(angles(i,2)) cos(angles(i,1))/cos(angles(i,2))]...
-                     *dt*w(i+1,:)')';
+                     *dt*w(i,:)')';
     if(angles(i+1,1)>=pi)
         angles(i+1,1) = angles(i+1,1) - (2 * pi);
     end
@@ -175,7 +175,7 @@ yaw = angles(:,3);
 %computening velocities:
 %Get acceleration
 accel_x = vru.dataHS.accx-accbix_bias;
-accel_y = vru.dataHS.accy+accbiy_bias;
+accel_y = vru.dataHS.accy-accbiy_bias;
 accel_z = vru.dataHS.accz-accbiz_bias;
 accel = vertcat(accel_x', accel_y', accel_z');
 

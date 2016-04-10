@@ -14,8 +14,8 @@ clear all; close all; fclose all; clc;
 % (c) iMAR Navigation | http://www.imar-navigation.de
 %
 %% Settings
-FileNameHs           = 'data/HS.log';
-FileNameLs           = 'data/LS.log';
+FileNameHs           = 'data/10_04_2016/HS.log';
+FileNameLs           = 'data/10_04_2016/LS.log';
 rateHS               = 0.005;   % 200Hz
 rateLS               = 0.2;     %   5Hz
 figureFlag           = 0;
@@ -115,13 +115,13 @@ vru.dataLS.time        = 0:rateLS:(length(vru.dataLS.Lon-1)-1)/(1/rateLS);
 
 %% Computeing
 %Compute bias during calib time (first 30s)     
-accbix_bias = mean(vru.dataHS.accx(1:7000))
-accbiy_bias = mean(vru.dataHS.accy(1:7000))
-accbiz_bias = mean(vru.dataHS.accz(1:7000)) + 9.81
+accbix_bias = mean(vru.dataHS.accx(1:3000))
+accbiy_bias = mean(vru.dataHS.accy(1:3000))
+accbiz_bias = mean(vru.dataHS.accz(1:3000)) + 9.81
 
-p_bias = mean(vru.dataHS.omgx(1:7000))
-q_bias = mean(vru.dataHS.omgy(1:7000))
-r_bias = mean(vru.dataHS.omgz(1:7000))
+p_bias = mean(vru.dataHS.omgx(1:3000))
+q_bias = mean(vru.dataHS.omgy(1:3000))
+r_bias = mean(vru.dataHS.omgz(1:3000))
 
 roll_uIMU = vru.dataHS.rpyx;
 pitch_uIMU = vru.dataHS.rpyy;
@@ -143,7 +143,7 @@ for i=1:length(angles)-1
                       [1 sin(angles(i,1))*sin(angles(i,2))/cos(angles(i,2)) cos(angles(i,1))*sin(angles(i,2))/cos(angles(i,2));...
                      0 cos(angles(i,1)) -sin(angles(i,1));...
                      0 sin(angles(i,1))/cos(angles(i,2)) cos(angles(i,1))/cos(angles(i,2))]...
-                     *dt*w(i+1,:)')';
+                     *dt*w(i,:)')';
     if(angles(i+1,1)>=pi)
         angles(i+1,1) = angles(i+1,1) - (2 * pi);
     end
@@ -174,31 +174,39 @@ yaw = angles(:,3);
 %computening velocities:
 %Get acceleration
 accel_x = vru.dataHS.accx-accbix_bias;
-accel_y = vru.dataHS.accy+accbiy_bias;
+accel_y = vru.dataHS.accy-accbiy_bias;
 accel_z = vru.dataHS.accz-accbiz_bias;
 accel = vertcat(accel_x', accel_y', accel_z');
 
 v = zeros(3,length(accel_x));
+
 pos_e = zeros(1,length(v));
 pos_n = zeros(1,length(v));
 pos_d = zeros(1,length(v));
-
+baro_delta = zeros(1,length(v));
+K1 = 0
+K2 = 0
+K3 = 0
 %Put init start velocity
 v(1,1) = 0;
 v(2,1) = 0;
 v(3,1) = 0;
 pos_e(1) = 0;
 pos_n(1) = 0;
-pos_d(1) = 0;
+pos_d(1) = vru.dataHS.baroAlt(1);
+baro_delta(1) = 0;
+
 %Compute all velocities with forward integration
 dt = vru.dataHS.time(2)-vru.dataHS.time(1)
 for i=1:length(accel_x)-1
-    Cb = EA2DCM(roll(i+1),pitch(i+1),yaw(i+1));
-    v(:,i+1) = v(:,i) +  dt*(Cb*accel(:,i+1)+[0;0;9.81]);
+    baro_delta(1+i) = baro_delta(i) + dt*K3*(vru.dataHS.baroAlt(i) - pos_d(i));
+    
+    Cb = EA2DCM(roll(i),pitch(i+1),yaw(i));
+    v(:,i+1) = v(:,i) +  dt*([0;0;baro_delta(i)]+(Cb*accel(:,i)+[0;0;9.81])+K2*[0;0;(vru.dataHS.baroAlt(i) - pos_d(i))]);
     %Calculate Position
-    pos_n(i+1) = pos_n(i) + dt*v(1,i+1);
-    pos_e(i+1) = pos_e(i) + dt*v(2,i+1);
-    pos_d(i+1) = pos_d(i) + dt*v(3,i+1);
+    pos_n(i+1) = pos_n(i) + dt*v(1,i);
+    pos_e(i+1) = pos_e(i) + dt*v(2,i);
+    pos_d(i+1) = pos_d(i) + dt*(v(3,i)+K1*(vru.dataHS.baroAlt(i) - pos_d(i)));
 
 end
 
