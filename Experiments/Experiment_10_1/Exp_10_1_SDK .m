@@ -184,9 +184,14 @@ pos_e = zeros(1,length(v));
 pos_n = zeros(1,length(v));
 pos_d = zeros(1,length(v));
 baro_delta = zeros(1,length(v));
-K1 = 0
-K2 = 0
-K3 = 0
+pos_gps = zeros(3,length(vru.dataLS.Lat));
+
+K1 = 1.18
+K2 = 0.4
+K3 = 0.03
+K4 = 0.8
+K5 = 0.8
+
 %Put init start velocity
 v(1,1) = 0;
 v(2,1) = 0;
@@ -195,20 +200,50 @@ pos_e(1) = 0;
 pos_n(1) = 0;
 pos_d(1) = vru.dataHS.baroAlt(1);
 baro_delta(1) = 0;
+prescaler = 40;
 
 %Compute all velocities with forward integration
 dt = vru.dataHS.time(2)-vru.dataHS.time(1)
 for i=1:length(accel_x)-1
+    presc_i = ceil(i/prescaler);
+    %Transformation from earth frame to navigation frame
+    %Compute Ce_n matrix
+    sLat = sin(vru.dataLS.Lat(presc_i)*D2R); 
+    cLat = cos(vru.dataLS.Lat(presc_i)*D2R);
+    sLon = sin(vru.dataLS.Lon(presc_i)*D2R);
+    cLon = cos(vru.dataLS.Lon(presc_i)*D2R);  
+%        Cne = [-sLon -cLon*sLat cLon*cLat;
+%               cLon -sLon*sLat sLon*cLat;
+%                0 cLat sLat];
+ 
+    Cne = [-sLat*cLon -sLon -cLat*cLon;
+                     -sLat*sLon cLon -cLon*sLat;
+                     cLat 0 -sLat]';
+    pos_gps(:,i) = Cne*[vru.dataLS.Lon(presc_i);vru.dataLS.Lat(presc_i);vru.dataLS.Alt(presc_i)];
+   %#######################################################################
+   
+    %static barometer integration
     baro_delta(1+i) = baro_delta(i) + dt*K3*(vru.dataHS.baroAlt(i) - pos_d(i));
-    
+     
+     %transformation from body frame to navigation frame
     Cb = EA2DCM(roll(i),pitch(i+1),yaw(i));
-    v(:,i+1) = v(:,i) +  dt*([0;0;baro_delta(i)]+(Cb*accel(:,i)+[0;0;9.81])+K2*[0;0;(vru.dataHS.baroAlt(i) - pos_d(i))]);
+
+    %velocity integration
+    v(:,i+1) = v(:,i) +  dt*([0;0;baro_delta(i)]+(Cb*accel(:,i)+[0;0;9.81])+[K5*(vru.dataLS.Vn(presc_i) - v(1,i));K4*(vru.dataLS.Ve(presc_i) - v(2,i));K2*(vru.dataHS.baroAlt(i) - pos_d(i))]);
     %Calculate Position
     pos_n(i+1) = pos_n(i) + dt*v(1,i);
     pos_e(i+1) = pos_e(i) + dt*v(2,i);
     pos_d(i+1) = pos_d(i) + dt*(v(3,i)+K1*(vru.dataHS.baroAlt(i) - pos_d(i)));
 
 end
+
+%figure()
+%subplot(3,1,1)
+%plot(pos_gps(1,:))
+%subplot(3,1,2)
+%plot(pos_gps(2,:))
+%subplot(3,1,3)
+%plot(pos_gps(3,:))
 
 
 
